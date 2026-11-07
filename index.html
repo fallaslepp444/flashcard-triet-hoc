@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flashcard Triết học Nga</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101827;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;padding:22px}
+h1{text-align:center;font-size:25px}
+.sub{text-align:center;color:#aab7ca}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+button,input,select{border:0;border-radius:10px;padding:12px;font-size:16px}
+button{background:#2563eb;color:white}
+input,select{background:#253247;color:white;min-width:0;flex:1}
+.card{background:#1e293b;border:1px solid #40516b;border-radius:20px;min-height:270px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:25px;margin-top:18px}
+.word{font-size:35px;font-weight:700;overflow-wrap:anywhere}
+.meaning{font-size:25px;margin-top:20px;color:#93c5fd}
+.hint{color:#aab7ca;margin-top:18px}
+.actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:18px 0}
+.progress{text-align:center;color:#aab7ca}
+</style>
+</head>
+<body>
+<h1>📚 Flashcard Triết học Nga</h1>
+<p class="sub">Học từ vựng Nga – Việt mỗi ngày</p>
+
+<div class="controls">
+<input id="search" placeholder="Tìm từ tiếng Nga..." oninput="render()">
+<select id="chapter" onchange="render()">
+<option value="all">Tất cả chủ đề</option>
+<option value="Triết học">Triết học</option>
+</select>
+</div>
+
+<div class="card" onclick="flip()">
+<div class="word" id="word">哲学</div>
+<div class="meaning" id="meaning">Triết học</div>
+<div class="hint" id="hint">Chạm vào thẻ để lật</div>
+</div>
+
+<div class="actions">
+<button onclick="speak()">🔊 Phát âm</button>
+<button onclick="flip()">↩ Lật thẻ</button>
+<button onclick="prev()">← Trước</button>
+<button onclick="next()">Tiếp →</button>
+<button onclick="shuffle()">🔀 Xáo trộn</button>
+</div>
+
+<p class="progress" id="progress"></p>
+<div class="actions">
+<button onclick="document.getElementById('file').click()">📥 Nhập danh sách JSON</button>
+<input id="file" type="file" accept=".json" hidden onchange="importData(event)">
+<button onclick="exportData()">📤 Xuất danh sách</button>
+</div>
+
+<script>
+const initial=[
+{ru:"философия",vi:"triết học",chapter:"Triết học"},
+{ru:"бытие",vi:"tồn tại, hiện hữu",chapter:"Triết học"},
+{ru:"сознание",vi:"ý thức",chapter:"Triết học"},
+{ru:"материя",vi:"vật chất",chapter:"Triết học"},
+{ru:"идеализм",vi:"chủ nghĩa duy tâm",chapter:"Triết học"},
+{ru:"материализм",vi:"chủ nghĩa duy vật",chapter:"Triết học"},
+{ru:"диалектика",vi:"phép biện chứng",chapter:"Triết học"},
+{ru:"познание",vi:"nhận thức",chapter:"Triết học"},
+{ru:"истина",vi:"chân lý",chapter:"Triết học"},
+{ru:"сущность",vi:"bản chất",chapter:"Triết học"},
+{ru:"явление",vi:"hiện tượng",chapter:"Triết học"},
+{ru:"противоречие",vi:"mâu thuẫn",chapter:"Triết học"}
+];
+let words=JSON.parse(localStorage.getItem("words")||"null")||initial;
+let index=0,shown=false,order=[];
+function filtered(){
+let q=document.getElementById("search").value.toLowerCase();
+let c=document.getElementById("chapter").value;
+return words.filter(w=>(c==="all"||w.chapter===c)&&
+(w.ru.toLowerCase().includes(q)||w.vi.toLowerCase().includes(q)));
+}
+function render(){
+let list=filtered();
+if(index>=list.length)index=0;
+let w=list[index];
+document.getElementById("word").textContent=w?(shown?w.vi:w.ru):"Không có từ";
+document.getElementById("meaning").textContent=w?(shown?w.ru:""): "";
+document.getElementById("hint").textContent=shown?"Chạm để xem lại":"Chạm vào thẻ để lật";
+document.getElementById("progress").textContent=list.length?`Thẻ ${index+1} / ${list.length}`:"Không có kết quả";
+}
+function flip(){shown=!shown;render()}
+function next(){let n=filtered().length;index=(index+1)%Math.max(n,1);shown=false;render()}
+function prev(){let n=filtered().length;index=(index-1+n)%Math.max(n,1);shown=false;render()}
+function shuffle(){words.sort(()=>Math.random()-.5);index=0;shown=false;render()}
+function speak(){
+let w=filtered()[index];if(!w)return;
+let u=new SpeechSynthesisUtterance(w.ru);
+u.lang="ru-RU";speechSynthesis.cancel();speechSynthesis.speak(u);
+}
+function importData(e){
+let f=e.target.files[0];if(!f)return;
+let r=new FileReader();
+r.onload=()=>{
+try{
+let data=JSON.parse(r.result);
+if(!Array.isArray(data))throw Error();
+words=data.map(x=>({ru:x.ru,vi:x.vi,chapter:x.chapter||"Triết học"}));
+localStorage.setItem("words",JSON.stringify(words));
+index=0;render();alert("Đã nhập "+words.length+" thẻ!");
+}catch(err){alert("File JSON không đúng định dạng.")}
+};
+r.readAsText(f);
+}
+function exportData(){
+let blob=new Blob([JSON.stringify(words,null,2)],{type:"application/json"});
+let a=document.createElement("a");a.href=URL.createObjectURL(blob);
+a.download="tu-vung-triet-hoc.json";a.click();
+URL.revokeObjectURL(a.href);
+}
+render();
+</script>
+</body>
+</html>
